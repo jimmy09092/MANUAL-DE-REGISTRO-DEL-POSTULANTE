@@ -96,8 +96,7 @@
     <div id="barra"><div id="barraProgreso"></div></div>
     <div class="opciones-botones">
       <button class="icono" onclick="toggleMute()" title="Silenciar">🔊</button>
-      <select id="selectVoz" onchange="cambiarVoz()" title="Seleccionar voz"></select>
-      <button class="icono" id="btnSubs" onclick="toggleSubtitulos()">SUBTÍTULOS</button>
+      <button class="icono" id="btnNarracion" onclick="toggleNarracion()" title="Iniciar Guía Narrada">GUÍA NARRADA</button>
     </div>
   </div>
 
@@ -234,60 +233,28 @@
     let synth = window.speechSynthesis;
     let utterance = null;
     let hablando = false;
-    let subtitulosVisibles = true;
-    let listaVocesDisponibles = [];
+    let vozGoogleEspanol = null;
 
-    // Carga dinámica de voces (soporta locales y remotas como Google Español)
-    function cargarVoces() {
-      const todasLasVoces = synth.getVoices();
-      if (todasLasVoces.length === 0) return;
+    // Busca automáticamente la voz "Google español"
+    function buscarVozGoogle() {
+      const voces = synth.getVoices();
+      if (voces.length === 0) return;
 
-      const select = document.getElementById("selectVoz");
-      const vozSeleccionadaPrevia = select.value;
-
-      select.innerHTML = "";
-      listaVocesDisponibles = todasLasVoces;
-
-      listaVocesDisponibles.forEach((v, index) => {
-        const option = document.createElement("option");
-        option.value = index;
-        option.textContent = `${v.name} (${v.lang})`;
-        select.appendChild(option);
-      });
-
-      // Selecciona por defecto 'Google español' si está disponible en el navegador
-      const indexGoogle = listaVocesDisponibles.findIndex(v => 
+      vozGoogleEspanol = voces.find(v => 
         v.name.toLowerCase().includes("google") && v.lang.toLowerCase().includes("es")
       );
 
-      if (vozSeleccionadaPrevia !== "" && select.options[vozSeleccionadaPrevia]) {
-        select.value = vozSeleccionadaPrevia;
-      } else if (indexGoogle !== -1) {
-        select.selectedIndex = indexGoogle;
+      if (!vozGoogleEspanol) {
+        vozGoogleEspanol = voces.find(v => v.lang.toLowerCase().startsWith("es"));
       }
     }
 
-    // Listener para eventos de cambio de voces en navegadores
     if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = cargarVoces;
-    }
-
-    // Refresca voces al interactuar con el sitio si faltan las online
-    window.addEventListener("click", () => {
-      if (listaVocesDisponibles.length <= 3) {
-        cargarVoces();
-      }
-    }, { once: true });
-
-    function cambiarVoz() {
-      if (hablando) {
-        detenerNarracion();
-        toggleNarracion();
-      }
+      speechSynthesis.onvoiceschanged = buscarVozGoogle;
     }
 
     function iniciarManual(){
-      cargarVoces();
+      buscarVozGoogle();
       document.getElementById("portada").style.display = "none";
       document.getElementById("cierre").style.display = "none";
       document.getElementById("carrusel").classList.add("activo");
@@ -319,7 +286,6 @@
       document.getElementById("pasoTitulo").textContent = p.titulo;
       document.getElementById("pasoDescCorta").innerHTML = p.descCorta;
       document.getElementById("cuadroSubtitulo").textContent = p.texto;
-      document.getElementById("cuadroSubtitulo").style.display = subtitulosVisibles ? 'block' : 'none';
       document.getElementById("numPasoHeader").textContent = String(indice + 1).padStart(2, '0');
 
       const container = document.getElementById("pasoMediaContainer");
@@ -409,30 +375,30 @@
     }
 
     function toggleNarracion(){
-      cargarVoces();
-      const btn = document.getElementById("btnPlay");
+      buscarVozGoogle();
+      const btnPlay = document.getElementById("btnPlay");
+
       if(hablando){
         synth.cancel();
         hablando = false;
-        btn.textContent = "▶";
+        btnPlay.textContent = "▶";
         return;
       }
+
       const texto = pasos[indice].texto;
       utterance = new SpeechSynthesisUtterance(texto);
       
-      const select = document.getElementById("selectVoz");
-      const indexVoz = select.value;
-      if (listaVocesDisponibles[indexVoz]) {
-        utterance.voice = listaVocesDisponibles[indexVoz];
+      if (vozGoogleEspanol) {
+        utterance.voice = vozGoogleEspanol;
       }
 
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
 
-      utterance.onend = ()=>{ hablando = false; btn.textContent = "▶"; };
+      utterance.onend = ()=>{ hablando = false; btnPlay.textContent = "▶"; };
       synth.speak(utterance);
       hablando = true;
-      btn.textContent = "❚❚";
+      btnPlay.textContent = "❚❚";
     }
 
     function detenerNarracion(){
@@ -443,14 +409,8 @@
 
     function toggleMute(){ detenerNarracion(); }
 
-    function toggleSubtitulos(){
-      subtitulosVisibles = !subtitulosVisibles;
-      document.getElementById("cuadroSubtitulo").style.display = subtitulosVisibles ? 'block' : 'none';
-    }
-
     window.onload = () => {
-      cargarVoces();
-      setTimeout(cargarVoces, 800);
+      buscarVozGoogle();
     };
   </script>
 </body>
