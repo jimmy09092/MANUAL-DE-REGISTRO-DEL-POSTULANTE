@@ -90,23 +90,16 @@
     <div class="nav-botones">
       <button class="icono" onclick="irAlInicio()" title="Ir al Inicio">⟲</button>
       <button class="icono" onclick="pasoAnterior()" title="Anterior">‹</button>
-      <button class="icono play" id="btnPlay" onclick="toggleNarracion()" title="Reproducir Narración">▶</button>
+      <button class="icono play" id="btnPlay" onclick="manejarBotonPlay()" title="Reproducir / Iniciar">▶</button>
       <button class="icono" onclick="pasoSiguiente()" title="Siguiente">›</button>
     </div>
     <div id="barra"><div id="barraProgreso"></div></div>
     <div class="opciones-botones">
-      <button class="icono" onclick="toggleMute()">🔊</button>
-      <select id="selectVoz"></select>
+      <button class="icono" onclick="toggleMute()" title="Silenciar">🔊</button>
+      <select id="selectVoz" onchange="cambiarVoz()" title="Seleccionar voz"></select>
       <button class="icono" id="btnSubs" onclick="toggleSubtitulos()">SUBTÍTULOS</button>
-      <button class="exportar" onclick="exportarPDF()">EXPORTAR PDF</button>
     </div>
   </div>
-
-  <!-- ============================================
-       VISTA DE IMPRESIÓN: se rellena dinámicamente
-       con TODOS los pasos antes de imprimir/exportar.
-       ============================================ -->
-  <div id="vistaImpresion"></div>
 
   <script>
     const pasos = [
@@ -242,24 +235,59 @@
     let utterance = null;
     let hablando = false;
     let subtitulosVisibles = true;
+    let listaVocesDisponibles = [];
 
-    function cargarVoces(){
+    // Carga dinámica de voces (soporta locales y remotas como Google Español)
+    function cargarVoces() {
+      const todasLasVoces = synth.getVoices();
+      if (todasLasVoces.length === 0) return;
+
       const select = document.getElementById("selectVoz");
+      const vozSeleccionadaPrevia = select.value;
+
       select.innerHTML = "";
-      let voces = synth.getVoices().filter(v => v.lang.startsWith("es"));
-      if(voces.length === 0) voces = synth.getVoices();
-      voces.forEach((v,i)=>{
-        const opt = document.createElement("option");
-        opt.value = i;
-        opt.textContent = v.name;
-        select.appendChild(opt);
+      listaVocesDisponibles = todasLasVoces;
+
+      listaVocesDisponibles.forEach((v, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = `${v.name} (${v.lang})`;
+        select.appendChild(option);
       });
-      window._voces = voces;
+
+      // Selecciona por defecto 'Google español' si está disponible en el navegador
+      const indexGoogle = listaVocesDisponibles.findIndex(v => 
+        v.name.toLowerCase().includes("google") && v.lang.toLowerCase().includes("es")
+      );
+
+      if (vozSeleccionadaPrevia !== "" && select.options[vozSeleccionadaPrevia]) {
+        select.value = vozSeleccionadaPrevia;
+      } else if (indexGoogle !== -1) {
+        select.selectedIndex = indexGoogle;
+      }
     }
-    synth.onvoiceschanged = cargarVoces;
-    cargarVoces();
+
+    // Listener para eventos de cambio de voces en navegadores
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = cargarVoces;
+    }
+
+    // Refresca voces al interactuar con el sitio si faltan las online
+    window.addEventListener("click", () => {
+      if (listaVocesDisponibles.length <= 3) {
+        cargarVoces();
+      }
+    }, { once: true });
+
+    function cambiarVoz() {
+      if (hablando) {
+        detenerNarracion();
+        toggleNarracion();
+      }
+    }
 
     function iniciarManual(){
+      cargarVoces();
       document.getElementById("portada").style.display = "none";
       document.getElementById("cierre").style.display = "none";
       document.getElementById("carrusel").classList.add("activo");
@@ -267,6 +295,15 @@
       document.getElementById("totalPasosHeader").textContent = pasos.length;
       indice = 0;
       renderPaso();
+    }
+
+    function manejarBotonPlay(){
+      const portadaVisible = document.getElementById("portada").style.display !== "none";
+      if (portadaVisible) {
+        iniciarManual();
+      } else {
+        toggleNarracion();
+      }
     }
 
     function renderPaso(){
@@ -372,6 +409,7 @@
     }
 
     function toggleNarracion(){
+      cargarVoces();
       const btn = document.getElementById("btnPlay");
       if(hablando){
         synth.cancel();
@@ -381,9 +419,16 @@
       }
       const texto = pasos[indice].texto;
       utterance = new SpeechSynthesisUtterance(texto);
-      utterance.lang = "es-PE";
+      
       const select = document.getElementById("selectVoz");
-      if(window._voces && window._voces[select.value]) utterance.voice = window._voces[select.value];
+      const indexVoz = select.value;
+      if (listaVocesDisponibles[indexVoz]) {
+        utterance.voice = listaVocesDisponibles[indexVoz];
+      }
+
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+
       utterance.onend = ()=>{ hablando = false; btn.textContent = "▶"; };
       synth.speak(utterance);
       hablando = true;
@@ -403,67 +448,10 @@
       document.getElementById("cuadroSubtitulo").style.display = subtitulosVisibles ? 'block' : 'none';
     }
 
-    /* ============================================
-       EXPORTAR PDF: genera una vista con TODOS los
-       pasos (no solo el actual) en una sola columna,
-       apta para impresión/PDF y lectura en mobile.
-       ============================================ */
-    function exportarPDF(){
-      detenerNarracion();
-      const cont = document.getElementById("vistaImpresion");
-      let html = `
-        <div class="paso-impreso">
-          <div class="num">PORTADA</div>
-          <h2>Manual de Registro de Postulante — Liderman</h2>
-          <div class="texto-narracion">
-            Bienvenido a la familia Liderman. Ahora es turno de completar tu legajo virtual.
-            Antes de empezar, ten a la mano tu CV, DNI vigente, certificado único laboral,
-            certificados de estudios, certificados de trabajo, croquis y foto de tu domicilio,
-            y de tener hijos menores, su documento de identidad.
-          </div>
-        </div>
-      `;
-
-      pasos.forEach((p, i) => {
-        const imgsHTML = p.img.map(archivo => {
-          const ext = archivo.toLowerCase().split('.').pop();
-          if (ext === "mp4") {
-            return ""; // los videos no se imprimen, solo imágenes
-          }
-          return `<img src="${archivo}" alt="Captura paso ${i+1}">`;
-        }).join("");
-
-        html += `
-          <div class="paso-impreso">
-            <div class="num">PASO ${i + 1} / ${pasos.length}</div>
-            <h2>${p.titulo}</h2>
-            <div class="desc">${p.descCorta}</div>
-            <div class="imgs">${imgsHTML}</div>
-            <div class="texto-narracion">${p.texto}</div>
-          </div>
-        `;
-      });
-
-      html += `
-        <div class="paso-impreso">
-          <div class="num">CIERRE</div>
-          <h2>¡Registro completado!</h2>
-          <div class="texto-narracion">
-            Tu información y documentos serán validados por el área de Gestión Documental.
-            Mantente atento a tu correo y teléfono registrado ante cualquier observación.
-          </div>
-        </div>
-      `;
-
-      cont.innerHTML = html;
-      window.print();
-    }
-
-    // Limpia la vista de impresión luego de imprimir/cancelar,
-    // para no dejarla ocupando el DOM innecesariamente.
-    window.addEventListener("afterprint", () => {
-      document.getElementById("vistaImpresion").innerHTML = "";
-    });
+    window.onload = () => {
+      cargarVoces();
+      setTimeout(cargarVoces, 800);
+    };
   </script>
 </body>
 </html>
