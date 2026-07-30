@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Manual Interactivo - Registro de Postulante Liderman</title>
+  <link rel="stylesheet" href="./estilos.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">LIDERMAN <span>· MANUAL OPERATIVO</span></div>
+    <div class="contador-header" id="contadorHeader" style="display:none;">PASO <span id="numPasoHeader">01</span> / <span id="totalPasosHeader">18</span></div>
+    <button class="btn-intro" onclick="irAlInicio()">INTRO</button>
+  </header>
+
+  <!-- PANTALLA INICIAL DE PORTADA -->
+  <section id="portada">
+    <h1>MANUAL DE <span>REGISTRO</span><br>DE POSTULANTE</h1>
+    <div class="subtitulo">REGISTRO EN PLATAFORMA · LIDERMAN</div>
+    <p>Guía interactiva paso a paso para completar tu legajo virtual en la plataforma de postulantes de Liderman antes de tu incorporación.</p>
+    <button id="btnIniciar" onclick="iniciarManual()">▶ INICIAR MANUAL</button>
+
+    <div id="cajaTexto">
+      <p class="intro-bienvenida">
+        Bienvenido a la familia Liderman. Ahora es turno de completar tu legajo virtual.
+        En los siguientes pasos te mostraremos cómo completarlo y qué documentos necesitas.
+      </p>
+      <p class="intro-recomendacion">
+        📌 <strong>Antes de empezar:</strong> Asegúrate de contar con buena conexión a internet (de preferencia usa una computadora) y ten a la mano los siguientes documentos:
+      </p>
+
+      <ul class="lista-documentos">
+        <li><strong>CV</strong> actualizado</li>
+        <li><strong>DNI</strong> vigente</li>
+        <li><strong>Certificado Único Laboral</strong> (CUL)</li>
+        <li><strong>Certificados de estudios</strong></li>
+        <li><strong>Certificados de trabajo</strong> anteriores</li>
+        <li><strong>Croquis y foto</strong> de tu domicilio</li>
+        <li><strong>DNI de hijos menores</strong> (si aplica)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CARRUSEL INTERACTIVO -->
+  <section id="carrusel">
+    <div class="paso-grid" id="pasoGrid">
+      <div class="paso-info">
+        <h2 class="paso-titulo" id="pasoTitulo">INGRESAR AL APLICATIVO</h2>
+        <div class="paso-desc-corta" id="pasoDescCorta"></div>
+      </div>
+      <div class="paso-imagen-container" id="pasoMediaContainer">
+        <!-- Contenido multimedia dinámico -->
+      </div>
+    </div>
+
+    <div class="cuadro-subtitulo" id="cuadroSubtitulo"></div>
+    <div class="dots" id="dots"></div>
+  </section>
+
+  <!-- PANTALLA DE CIERRE -->
+  <section id="cierre" style="display: none;">
+    <h1>¡REGISTRO <span>COMPLETADO</span>!</h1>
+    <div class="subtitulo">PROCESO FINALIZADO · LIDERMAN</div>
+    <p>Has revisado exitosamente todos los pasos para la carga de tu legajo virtual.</p>
+    <button id="btnReiniciar" onclick="irAlInicio()">⟲ REINICIAR MANUAL</button>
+
+    <div id="cajaTextoCierre">
+      <p class="cierre-agradecimiento">
+        ¡Excelente trabajo! Tu información y documentos serán validados por el área de <strong>Gestión Documental</strong>.
+      </p>
+      <p class="cierre-recomendacion">
+        ✅ <strong>Siguientes pasos recomendados:</strong>
+      </p>
+
+      <ul class="lista-documentos">
+        <li>Mantente atento a tu <strong>correo electrónico</strong> y teléfono de contacto registrado.</li>
+        <li>Asegúrate de haber adjuntado la <strong>Documentacion solicitada</strong> clara y legible.</li>
+        <li>Si tu reclutador te solicita subsanar alguna observación, ingresa nuevamente con tu usuario a la plataforma.</li>
+      </ul>
+
+      <div class="mensaje-final-liderman">
+        ¡Te deseamos el mayor de los éxitos en esta nueva etapa formando parte de la gran familia Liderman!
+      </div>
+    </div>
+  </section>
+
+  <!-- BARRA DE CONTROLES INFERIOR -->
+  <div id="controles">
+    <div class="nav-botones">
+      <button class="icono" onclick="irAlInicio()" title="Ir al Inicio">⟲</button>
+      <button class="icono" onclick="pasoAnterior()" title="Anterior">‹</button>
+      <button class="icono play" id="btnPlay" onclick="toggleNarracion()" title="Reproducir Narración">▶</button>
+      <button class="icono" onclick="pasoSiguiente()" title="Siguiente">›</button>
+    </div>
+    <div id="barra"><div id="barraProgreso"></div></div>
+    <div class="opciones-botones">
+      <button class="icono" onclick="toggleMute()">🔊</button>
+      <select id="selectVoz"></select>
+      <button class="icono" id="btnSubs" onclick="toggleSubtitulos()">SUBTÍTULOS</button>
+      <button class="exportar" onclick="exportarPDF()">EXPORTAR PDF</button>
+    </div>
+  </div>
+
+  <!-- ============================================
+       VISTA DE IMPRESIÓN: se rellena dinámicamente
+       con TODOS los pasos antes de imprimir/exportar.
+       ============================================ -->
+  <div id="vistaImpresion"></div>
+
+  <script>
+    const pasos = [
+      {
+        titulo: "Ingreso a la plataforma",
+        descCorta: "Accede al enlace de la plataforma y dirígete al botón de registro para iniciar.",
+        texto: "Ingresa a postulantes.liderman.org/login, donde se mostrará la pantalla de bienvenida. En esta pantalla debes presionar el botón Regístrate para crear tu usuario.",
+        img: ["img/paso1.png"]
+      },
+      {
+        titulo: "Registro de datos básicos",
+        descCorta: "Ingresa tus datos personales principales con atención a los detalles.",
+        texto: "Se solicitarán tus datos personales básicos: nombres, apellidos, correo electrónico, teléfono, tipo y número de documento. Recuerda que, una vez llenado, este formulario no se puede corregir, así que verifica bien tu información antes de continuar.",
+        img: ["img/paso2.png"]
+      },
+      {
+        titulo: "Validación por correo",
+        descCorta: "Verifica tu cuenta ingresando el código enviado a tu correo.",
+        texto: "Llegará un código de 6 dígitos al correo que registraste. Ingresa ese código en la plataforma para habilitar el formulario y comenzar a completar tu información.",
+        img: ["img/paso3.png"]
+      },
+      {
+        titulo: "Ficha de datos personales",
+        descCorta: "Rellena tu información de domicilio y datos familiares directos.",
+        texto: "Completa tus datos personales, dirección de domicilio y datos de tus familiares directos (cónyuge/conviviente, hijos y padres). Verifica que todos los campos obligatorios estén llenos.",
+        img: ["img/paso4.gif"]
+      },
+      {
+        titulo: "Firma digital",
+        descCorta: "Dibuja tu firma en el recuadro correspondiente para avanzar.",
+        texto: "Al finalizar esta primera hoja, dibuja tu firma usando el mouse o el dedo si usas un dispositivo táctil, y presiona Siguiente. Si algún campo obligatorio falta, se marcará en rojo y no podrás avanzar hasta completarlo.",
+        img: ["img/paso5.png"]
+      },
+      {
+        titulo: "Boletín e Información Previsional",
+        descCorta: "Revisa la información institucional y selecciona tu sistema de pensiones.",
+        texto: "Lee atentamente el boletín informativo institucional y luego selecciona el sistema de pensiones al que perteneces (AFP u ONP) antes de continuar con el proceso.",
+        img: ["img/paso6.gif"]
+      },
+      {
+        titulo: "Cláusula de consentimiento",
+        descCorta: "Acepta los términos sobre confidencialidad y protección de tus datos.",
+        texto: "Aquí explicamos la confidencialidad y protección de datos personales que nos estás brindando.",
+        img: ["img/paso8.png"]
+      },
+      {
+        titulo: "Elección de jornada de trabajo",
+        descCorta: "Marca la jornada de trabajo acordada previamente con tu reclutador.",
+        texto: "Marca si trabajarás en jornada de 8 o 12 horas, de acuerdo a lo previamente conversado con tu reclutador.",
+        img: ["img/paso9.png"]
+      },
+      {
+        titulo: "Visita domiciliaria",
+        descCorta: "Responde los cuestionarios de opción múltiple solicitados.",
+        texto: "Completa los campos de opción múltiple de esta sección. Estos también son obligatorios para poder continuar con el registro.",
+        img: ["img/paso10.gif"]
+      },
+      {
+        titulo: "Autorizaciones, Convenios, Declaraciones",
+        descCorta: `
+          <ul class="lista-paso-desc">
+            <li><strong>Tratamiento de datos personales:</strong> Acepta la autorización de uso de imagen y voz para fines corporativos.</li>
+            <li><strong>Cargo de entrega de documentos laborales:</strong> Listado de documentos recibidos al ingreso.</li>
+            <li><strong>Convenio de descuento:</strong> Por permanencia minima de 12 meses.</li>
+            <li><strong>Declaracion jurada:</strong> Sobre sustancias psicoactivas, SST, poligrafo, antecedentes y capacitaciones.</li>
+            <li><strong>Conflicto de intereses:</strong> Leer y marcar si cuentan con algun conflicto de intereses.</li>
+            <li><strong>Gestion integral de activos:</strong> Recepción de condiciones del procedimiento de gestion integral de activos.</li>
+            <li><strong>Constancia de entrega de EMO:</strong> Recepcion del informe medico ocupacional.</li>
+            <li><strong>Capacitacaion App Liderman:</strong> Alcance y funcionamiento de la app.</li>
+            <li><strong>Autorizacion de descuento:</strong> En caso se vean dañados los bienes del cliente.</li>
+          </ul>
+        `,
+        texto: "Acepta la autorización de uso de imagen/voz, descarga y adjunta tu estructura salarial firmada y revisa sucesivamente los cargos, convenios de permanencia y declaraciones juradas correspondientes.",
+        img: ["img/paso11.gif"]
+      },
+      {
+        titulo: "Subir Curriculum Vitae",
+        descCorta: "Adjunta tu CV actualizado preferentemente en formato PDF.",
+        texto: "Sube tu Curriculum Vitae, de preferencia en formato PDF, para una óptima lectura de tu información.",
+        img: ["img/paso14_1.gif"]
+      },
+      {
+        titulo: "Subir DNI",
+        descCorta: "Carga la imagen clara de ambas caras de tu documento de identidad.",
+        texto: "Sube una foto de ambas caras de tu documento de identidad y completa la información solicitada: fecha de vencimiento, fecha de emisión y ubigeo.",
+        img: ["img/paso15_1.png", "img/paso15_2.png"]
+      },
+      {
+        titulo: "Certificado Único Laboral",
+        descCorta: "Adjunta el CUL expedido por el Ministerio de Trabajo.",
+        texto: "Sube tu certificado único laboral, tramitado sin costo en la página del Ministerio de Trabajo. Se usará para validar tus antecedentes. Si sales observado en alguno, puedes presentar tus antecedentes de forma individual usando el botón 'Tengo observaciones'.",
+        img: ["img/paso16_1.png", "img/paso16_2.png"]
+      },
+      {
+        titulo: "Certificado de estudios",
+        descCorta: "Adjunta constancias de estudios o la declaración jurada notarial.",
+        texto: "Sube tu certificado de estudios básicos o superiores. Si no cuentas con ninguno, deberás formalizar una declaración jurada de estudios ante un notario para que sea válida.",
+        img: ["img/paso17_1.png", "img/paso17_2.png"]
+      },
+      {
+        titulo: "Certificados de trabajo",
+        descCorta: "Adjunta tus certificados de trabajo de empleos anteriores.",
+        texto: "Adjunta tus certificados de trabajos anteriores. Si no cuentas con alguno, puede reemplazarse por una declaración jurada de trabajo simple.",
+        img: ["img/paso18_1.png"]
+      },
+      {
+        titulo: "Croquis y foto de domicilio",
+        descCorta: "Sube el plano de ubicación y la foto actual de tu fachada.",
+        texto: "Sube el croquis de tu domicilio, que puedes obtener de Google Maps, y una foto actual de la fachada de tu casa tal como se ve al momento de completar tu registro.",
+        img: ["img/paso19_1.png", "img/paso19_2.png"]
+      },
+      {
+        titulo: "Asignación familiar",
+        descCorta: "Aplica si cuentas con hijos menores de 18 años o entre 18 y 24 años que se mantengan estudiando.",
+        texto: "Si tienes hijos menores de edad, sube también sus documentos de identidad para el registro del beneficio.",
+        img: ["img/paso20_1.png", "img/paso20_2.png"]
+      },
+      {
+        titulo: "Condiciones laborales y DJ de huellas dactilares",
+        descCorta: `
+          <ul class="lista-paso-desc">
+            <li><strong>Condiciones laborales:</strong> Formato donde se consigna tu estructura salarial, la cual debe ser proporcionado por tu reclutador y firmada por tu persona.</li>
+            <li><strong>DJ de huellas dactilares:</strong> Formato descargable para que sea impreso y llenado a mano, para luego ser subido a la web.</li>
+          </ul>
+        `,
+        texto: "Descarga la declaración jurada de autenticidad dactilar, imprímela, complétala a mano con tu firma y huella dactilar, y súbela a la plataforma. Con esto tu registro quedará finalizado y será revisado por el área de gestión documental.",
+        img: ["img/paso21_1.png", "img/paso21_2.png"]
+      }
+    ];
+
+    let indice = 0;
+    let synth = window.speechSynthesis;
+    let utterance = null;
+    let hablando = false;
+    let subtitulosVisibles = true;
+
+    function cargarVoces(){
+      const select = document.getElementById("selectVoz");
+      select.innerHTML = "";
+      let voces = synth.getVoices().filter(v => v.lang.startsWith("es"));
+      if(voces.length === 0) voces = synth.getVoices();
+      voces.forEach((v,i)=>{
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = v.name;
+        select.appendChild(opt);
+      });
+      window._voces = voces;
+    }
+    synth.onvoiceschanged = cargarVoces;
+    cargarVoces();
+
+    function iniciarManual(){
+      document.getElementById("portada").style.display = "none";
+      document.getElementById("cierre").style.display = "none";
+      document.getElementById("carrusel").classList.add("activo");
+      document.getElementById("contadorHeader").style.display = "block";
+      document.getElementById("totalPasosHeader").textContent = pasos.length;
+      indice = 0;
+      renderPaso();
+    }
+
+    function renderPaso(){
+      const p = pasos[indice];
+
+      const pasoGrid = document.getElementById("pasoGrid");
+      if (indice < 10 && indice % 2 !== 0) {
+        pasoGrid.classList.add("inverso");
+      } else {
+        pasoGrid.classList.remove("inverso");
+      }
+
+      document.getElementById("pasoTitulo").textContent = p.titulo;
+      document.getElementById("pasoDescCorta").innerHTML = p.descCorta;
+      document.getElementById("cuadroSubtitulo").textContent = p.texto;
+      document.getElementById("cuadroSubtitulo").style.display = subtitulosVisibles ? 'block' : 'none';
+      document.getElementById("numPasoHeader").textContent = String(indice + 1).padStart(2, '0');
+
+      const container = document.getElementById("pasoMediaContainer");
+      container.innerHTML = "";
+
+      if (p.img.length > 1) {
+        container.classList.add("doble-imagen");
+      } else {
+        container.classList.remove("doble-imagen");
+      }
+
+      p.img.forEach(archivo => {
+        const ext = archivo.toLowerCase().split('.').pop();
+
+        if (ext === "mp4") {
+          const videoHTML = `
+            <video class="media-paso" autoplay loop muted playsinline controls>
+              <source src="${archivo}" type="video/mp4">
+            </video>`;
+          container.insertAdjacentHTML('beforeend', videoHTML);
+          const videoElement = container.querySelector('video');
+          if (videoElement) {
+            videoElement.load();
+            videoElement.play().catch(() => {});
+          }
+        } else {
+          const imgHTML = `<img src="${archivo}" alt="Captura del paso" class="media-paso">`;
+          container.insertAdjacentHTML('beforeend', imgHTML);
+        }
+      });
+
+      const porcentaje = ((indice + 1) / pasos.length) * 100;
+      document.getElementById("barraProgreso").style.width = porcentaje + "%";
+
+      renderDots();
+      detenerNarracion();
+    }
+
+    function renderDots(){
+      const dots = document.getElementById("dots");
+      dots.innerHTML = "";
+      pasos.forEach((_,i)=>{
+        const d = document.createElement("span");
+        if(i === indice) d.classList.add("activo");
+        d.onclick = ()=>{ indice = i; renderPaso(); };
+        dots.appendChild(d);
+      });
+    }
+
+    function pasoSiguiente(){
+      if(indice < pasos.length - 1){
+        indice++;
+        renderPaso();
+      } else {
+        mostrarPantallaCierre();
+      }
+    }
+
+    function pasoAnterior(){
+      if (document.getElementById("cierre").style.display === "block") {
+        document.getElementById("cierre").style.display = "none";
+        document.getElementById("carrusel").classList.add("activo");
+        document.getElementById("contadorHeader").style.display = "block";
+        renderPaso();
+        return;
+      }
+      if(indice > 0){
+        indice--;
+        renderPaso();
+      }
+    }
+
+    function mostrarPantallaCierre(){
+      document.getElementById("carrusel").classList.remove("activo");
+      document.getElementById("cierre").style.display = "block";
+      document.getElementById("contadorHeader").style.display = "none";
+      document.getElementById("barraProgreso").style.width = "100%";
+      detenerNarracion();
+    }
+
+    function irAlInicio(){
+      document.getElementById("portada").style.display = "block";
+      document.getElementById("cierre").style.display = "none";
+      document.getElementById("carrusel").classList.remove("activo");
+      document.getElementById("contadorHeader").style.display = "none";
+      detenerNarracion();
+    }
+
+    function toggleNarracion(){
+      const btn = document.getElementById("btnPlay");
+      if(hablando){
+        synth.cancel();
+        hablando = false;
+        btn.textContent = "▶";
+        return;
+      }
+      const texto = pasos[indice].texto;
+      utterance = new SpeechSynthesisUtterance(texto);
+      utterance.lang = "es-PE";
+      const select = document.getElementById("selectVoz");
+      if(window._voces && window._voces[select.value]) utterance.voice = window._voces[select.value];
+      utterance.onend = ()=>{ hablando = false; btn.textContent = "▶"; };
+      synth.speak(utterance);
+      hablando = true;
+      btn.textContent = "❚❚";
+    }
+
+    function detenerNarracion(){
+      synth.cancel();
+      hablando = false;
+      document.getElementById("btnPlay").textContent = "▶";
+    }
+
+    function toggleMute(){ detenerNarracion(); }
+
+    function toggleSubtitulos(){
+      subtitulosVisibles = !subtitulosVisibles;
+      document.getElementById("cuadroSubtitulo").style.display = subtitulosVisibles ? 'block' : 'none';
+    }
+
+    /* ============================================
+       EXPORTAR PDF: genera una vista con TODOS los
+       pasos (no solo el actual) en una sola columna,
+       apta para impresión/PDF y lectura en mobile.
+       ============================================ */
+    function exportarPDF(){
+      detenerNarracion();
+      const cont = document.getElementById("vistaImpresion");
+      let html = `
+        <div class="paso-impreso">
+          <div class="num">PORTADA</div>
+          <h2>Manual de Registro de Postulante — Liderman</h2>
+          <div class="texto-narracion">
+            Bienvenido a la familia Liderman. Ahora es turno de completar tu legajo virtual.
+            Antes de empezar, ten a la mano tu CV, DNI vigente, certificado único laboral,
+            certificados de estudios, certificados de trabajo, croquis y foto de tu domicilio,
+            y de tener hijos menores, su documento de identidad.
+          </div>
+        </div>
+      `;
+
+      pasos.forEach((p, i) => {
+        const imgsHTML = p.img.map(archivo => {
+          const ext = archivo.toLowerCase().split('.').pop();
+          if (ext === "mp4") {
+            return ""; // los videos no se imprimen, solo imágenes
+          }
+          return `<img src="${archivo}" alt="Captura paso ${i+1}">`;
+        }).join("");
+
+        html += `
+          <div class="paso-impreso">
+            <div class="num">PASO ${i + 1} / ${pasos.length}</div>
+            <h2>${p.titulo}</h2>
+            <div class="desc">${p.descCorta}</div>
+            <div class="imgs">${imgsHTML}</div>
+            <div class="texto-narracion">${p.texto}</div>
+          </div>
+        `;
+      });
+
+      html += `
+        <div class="paso-impreso">
+          <div class="num">CIERRE</div>
+          <h2>¡Registro completado!</h2>
+          <div class="texto-narracion">
+            Tu información y documentos serán validados por el área de Gestión Documental.
+            Mantente atento a tu correo y teléfono registrado ante cualquier observación.
+          </div>
+        </div>
+      `;
+
+      cont.innerHTML = html;
+      window.print();
+    }
+
+    // Limpia la vista de impresión luego de imprimir/cancelar,
+    // para no dejarla ocupando el DOM innecesariamente.
+    window.addEventListener("afterprint", () => {
+      document.getElementById("vistaImpresion").innerHTML = "";
+    });
+  </script>
+</body>
+</html>
