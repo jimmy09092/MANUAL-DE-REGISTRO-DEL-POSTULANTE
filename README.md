@@ -1,4 +1,6 @@
-Agregar:
+App.py en carpeta "use"
+
+Agregar para descargar paquetes:
 py -m pip install flask edge-tts
 
 L.Host -> http://127.0.0.1:5000
