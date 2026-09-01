@@ -10,7 +10,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 app = Flask(__name__)
 
 EDGE_TTS_VOICE = os.getenv("EDGE_TTS_VOZ", "es-MX-DaliaNeural")
-EDGE_TTS_RATE = os.getenv("EDGE_TTS_RATE", "+10%")
+EDGE_TTS_RATE = os.getenv("EDGE_TTS_RATE", "+5%")
 TTS_CACHE = {}
 
 
